@@ -35,3 +35,27 @@ resource "aws_iam_role" "iam_for_lambda" {
     ]
   })
 }
+
+# add an IAM policy that grants the Lambda function read access (s3:GetObject) to the specific S3 object
+# (lambda_function_payload.zip). Without this, the Lambda function cannot retrieve its deployment package.
+resource "aws_iam_policy" "s3_access_policy" {
+  name        = "s3-access-policy"
+  description = "Allows Lambda to access S3 bucket"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action   = ["s3:GetObject"],
+        Effect   = "Allow",
+        Resource = "arn:aws:s3:::my-super-cool-bucket/lambda_function_payload.zip"
+      }
+    ]
+  })
+}
+
+# The policy is then attached to the Lambda's IAM role to ensure it has the necessary permissions.
+resource "aws_iam_role_policy_attachment" "lambda_s3_attach" {
+  policy_arn = aws_iam_policy.s3_access_policy.arn
+  role       = aws_iam_role.iam_for_lambda.name
+}
+
